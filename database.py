@@ -11,11 +11,12 @@ class Database:
 
     def connect(self):
         conn_str = (
-                f"DRIVER={{ODBC 17 for SQL Server}};"
+                f"DRIVER={{ODBC Driver 17 for SQL Server}};"
                 f"SERVER={self.server},{self.port};"
                 f"DATABASE={self.database};"
                 f"UID={self.username};"
                 f"PWD={self.password};"
+                f"Encrypt=no;"
             )
 
         try:

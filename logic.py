@@ -16,21 +16,29 @@ class DBConnection(BaseModel):
 # store connection object globally after login
 db_instance = None
 
+@router.get("/")
+async def home():
+    return {"Your backend is running": "Yes"}
+
 @router.post("/connect-db")
 async def connect_db(conn: DBConnection):
+    print(f"DEBUG: Connecting to server={conn.server}, database={conn.database}, username={conn.username} ")
     global db_instance
     try:
         db_instance = Database(conn.server, conn.database, conn.username, conn.password)
         db_instance.connect()
+        print("DEBUG: Connection Successful!")
         return {"message": "Connection to the Database successfull"}
     except Exception as e:
+        error_msg=str(e)
+        print(f"DEBUG: Connection failed with error:{error_msg}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @router.get("/vat-return")
 async def vat_report(
     start_date: str = Query(..., description="Format: YYYY-MM-DD"), 
     end_date: str = Query(..., description="Format: YYYY-MM-DD"), 
-    store_id: int = Query(None, description="Optional: Filter by specicifc order")
+    StoreID: int = Query(None, description="Optional: Filter by specicifc order")
     ):
 
     global db_instance
@@ -47,34 +55,30 @@ async def vat_report(
 
     base_query = f"""
             SELECT
-                t.id,
-                t.Store_ID,
-                t.Terminal,
-                t.Transaction_number,
-                t.TransactionDate,
-                t.Item_Code,
-                t.Description,
-                t.Quanity,
-                t.Price,
-                t.Total_Excl,
-                t.VAT_Amount,
-                t.Total_Incl,
-                t.Discount_Amount,
-                s.Name as StoreName,
-                i.vatrate as ItemVATRate
-                FROM Transaction t
-                LEFT JOIN Store s ON t.Store_ID = s.ID
-                LEFT JOIN item i ON t.Item_Code = i.itemCode
-                WHERE t.transactionDate >= ? AND t.transactionDate <= ?       
+                te.StoreID,
+                t.Time  AS TransactionDate,
+                t.BatchNumber,
+                te.SalesTax AS VAT_Amount,
+                (te.Price * te.Quantity + te.SalesTax) AS Total_Incl,
+                (te.Price * te.Quantity) AS Total_Excl,
+                s.Name AS StoreName,
+                i.TaxID as ItemTaxID,
+                tx.Percentage AS ItemVATRate
+                FROM TransactionEntry te
+                LEFT JOIN [Transaction] t ON te.TransactionNumber = t.TransactionNumber
+                LEFT JOIN item i ON te.ItemID = i.ID
+                LEFT JOIN Tax tx on i.TaxID = tx.ID
+                LEFT JOIN Store s on te.StoreID = s.ID
+                WHERE t.Time >= ? AND t.Time <= ?       
     """
 
     params =  [start_date, end_date]
 
-    if store_id:
-        base_query += " AND t.Store_ID = ?"
-        params.append(str(store_id))
+    if StoreID:
+        base_query += " AND te.StoreID = ? "
+        params.append(str(StoreID))
     
-    base_query += "ORDER BY t.transactionDate, t.Transaction_Number"
+    base_query += "ORDER BY TransactionDate"
 
     try:
         df = pd.read_sql(base_query, conn, params=tuple(params))
@@ -122,7 +126,7 @@ async def vat_report(
         })
 
     # store breakdown 
-    store_breakdown = df.groupby(['Store_ID', 'StoreName']).agg({
+    store_breakdown = df.groupby(['StoreID', 'StoreName']).agg({
         'Total_Excl': 'sum',
         'VAT_Amount': 'sum',
         'Total_Incl': 'sum'
@@ -131,8 +135,8 @@ async def vat_report(
     store_breakdown_list = []
     for _, row in store_breakdown.iterrows():
         store_breakdown_list.append({
-            "store_id": int(row['Store_ID']),
-            "store_name": row['StoreName'] if pd.notna(row['StoreName']) else f"Store {row['Store_ID']}",
+            "StoreID": int(row['StoreID']),
+            "store_name": row['StoreName'] if pd.notna(row['StoreName']) else f"Store {row['StoreID']}",
             "sales_excl_vat": round(float(row['Total_Excl']), 2),
             "vat_amount": round(float(row['VAT_Amount']), 2),
             "sales_incl_vat": round(float(row['Total_Incl']), 2)
@@ -155,7 +159,7 @@ async def vat_report(
 async def vat_summary(
     start_date: str =Query(..., description="Format: YYYY-MM-DD"),
     end_date: str = Query(..., description="Format: YYYY-MM-DD"),
-    store_id: int = Query(None, description="Optional: Filter by specific store")
+    StoreID: int = Query(None, description="Optional: Filter by specific store")
 ):
     # Simple VAT summary
     global db_instance
@@ -172,15 +176,12 @@ async def vat_summary(
 
     summary_query = """
         SELECT 
-            SummaryDate,
-            GrossSales,
-            TaxableSales,
-            NonTaxableSales,
-            TaxAmount,
-            Discounts
-        FROM Daily_Summary
-        WHERE SummaryDate >= ? AND SummaryDate <= ?
-        ORDER BY SummaryDate 
+            Date AS SummaryDate,
+            Total AS GrossSales,
+            StoreID
+        FROM DailySales
+        WHERE Date >= ? AND Date <= ?
+        ORDER BY Date 
     """
 
     try:
@@ -208,22 +209,21 @@ async def vat_summary(
     
     transaction_query = """
             SELECT 
-                CAST(transactionDate as DATE) as TransactionDate,
-                SUM(Total_Excl) as TotalExcl,
-                SUM(VAT_Amount) as TotalVAT,
-                SUM(Total_Incl) as TotalIncl,
-                SUM(Discount_Amount) as TotalDiscounts,
+                CAST(Time as DATE) as TransactionDate,
+                SUM(Total) - SUM(SalesTax) as TotalExcl,
+                SUM(SalesTax) as TotalVAT,
+                SUM(Total) as TotalIncl,
                 COUNT(*) as TransactionCount
-            FROM Transaction
-            WHERE transactionDate >= ? AND transactionDate <= ?
+            FROM [Transaction]
+            WHERE Time >= ? AND Time <= ?
         """
     
     params = [start_date, end_date]
-    if store_id:
-        transaction_query += " AND Store_ID = ?"
-        params.append(str(store_id))
+    if StoreID:
+        transaction_query += " AND StoreID = ?"
+        params.append(str(StoreID))
     
-    transaction_query += " GROUP BY CAST(transactionDate as DATE) ORDER BY TransactionDate"
+    transaction_query += " GROUP BY CAST(Time as DATE) ORDER BY CAST(Time AS Date)"
     
     try:
         df = pd.read_sql(transaction_query, conn, params=tuple(params))
@@ -237,7 +237,6 @@ async def vat_summary(
                 "total_sales_excl_vat": round(df['TotalExcl'].sum(), 2),
                 "total_vat_amount": round(df['TotalVAT'].sum(), 2),
                 "total_sales_incl_vat": round(df['TotalIncl'].sum(), 2),
-                "total_discounts": round(df['TotalDiscounts'].sum(), 2),
                 "total_transactions": int(df['TransactionCount'].sum())
             },
             "daily_breakdown": df.to_dict(orient="records")
@@ -255,7 +254,7 @@ async def get_stores():
     conn = db_instance.get_connection()
     
     try:
-        df = pd.read_sql("SELECT ID, Name, BranchNumber, TaxCode FROM Store ORDER BY Name", conn)
+        df = pd.read_sql("SELECT ID, Name, StoreCode FROM Store ORDER BY Name", conn)
         return {"stores": df.to_dict(orient="records")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch stores: {str(e)}")
@@ -271,11 +270,14 @@ async def get_vat_rates():
     
     try:
         df = pd.read_sql("""
-            SELECT DISTINCT vatrate as vat_rate, COUNT(*) as item_count 
-            FROM item 
-            WHERE vatrate IS NOT NULL 
-            GROUP BY vatrate 
-            ORDER BY vatrate
+            SELECT 
+                    t2.Percentage AS vat_rate,
+                    COUNT(*) AS item_count
+            FROM item i
+            LEFT JOIN Tax t2 ON i.TaxID = t2.ID
+            WHERE i.TaxID IS NOT NULL 
+            GROUP BY t2.Percentage 
+            ORDER BY t2.percentage
         """, conn)
         return {"vat_rates": df.to_dict(orient="records")}
     except Exception as e:
