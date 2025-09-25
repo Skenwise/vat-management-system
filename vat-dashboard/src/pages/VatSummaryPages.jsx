@@ -66,7 +66,11 @@ export default function VatSummaryPage() {
 
     setIsLoading(true);
     try {
-      const res = await getVatSummary(startDate, endDate, storeId || undefined);
+      const res = await getVatSummary({
+        start_date: startDate,
+        end_date: endDate,
+        StoreID: storeId || undefined,
+      });
       setSummary(res.data.summary);
       setDailyBreakdown(res.data.daily_breakdown);
     } catch (err) {

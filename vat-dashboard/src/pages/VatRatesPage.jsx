@@ -7,7 +7,6 @@ import {
   Grid,
   Card,
   CardContent,
-  Chip,
   Snackbar,
   Alert
 } from "@mui/material";
@@ -39,35 +38,63 @@ export default function VatRatesPage() {
   }, []);
 
   return (
-    <Box sx={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", py: 6 }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        py: 6,
+      }}
+    >
       <Container maxWidth="lg">
         {/* Page Title */}
-        <Typography variant="h3" sx={{ color: "white", fontWeight: 700, mb: 4 }}>
+        <Typography
+          variant="h3"
+          sx={{ color: "white", fontWeight: 700, mb: 4 }}
+        >
           VAT Rates
         </Typography>
 
         {/* VAT Rates Grid */}
-        <Grid container spacing={3}>
+        <Grid container spacing={4}>
           {vatRates.map((rate, idx) => (
-            <Grid item xs={12} sm={6} md={4} key={idx}>
+            <Grid item xs={12} sm={6} md={6} key={idx}>
               <Card
                 sx={{
-                  borderRadius: 3,
-                  background: "rgba(255,255,255,0.95)",
-                  backdropFilter: "blur(10px)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-                  transition: "transform 0.2s",
-                  "&:hover": { transform: "translateY(-5px)" },
+                  borderRadius: 4,
+                  background: "rgba(255,255,255,0.97)",
+                  backdropFilter: "blur(12px)",
+                  boxShadow: "0 12px 48px rgba(0,0,0,0.15)",
+                  transition: "transform 0.25s, box-shadow 0.25s",
+                  "&:hover": {
+                    transform: "translateY(-8px)",
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+                  },
+                  p: 3,
                 }}
               >
                 <CardContent>
-                  <Box display="flex" alignItems="center" mb={2}>
-                    <Calculate sx={{ color: "#667eea", mr: 1, fontSize: 28 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    mb={2}
+                    sx={{ fontSize: 36 }}
+                  >
+                    <Calculate
+                      sx={{ color: "#667eea", mr: 2, fontSize: 40 }}
+                    />
+                    <Typography
+                      variant="h4"
+                      sx={{ fontWeight: 700, color: "#333" }}
+                    >
                       {rate.vat_rate}% VAT
                     </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
+
+                  <Typography
+                    variant="h6"
+                    color="text.secondary"
+                    sx={{ mt: 1 }}
+                  >
                     Items using this rate: {rate.item_count}
                   </Typography>
                 </CardContent>
@@ -76,7 +103,11 @@ export default function VatRatesPage() {
           ))}
 
           {vatRates.length === 0 && !isLoading && (
-            <Typography variant="body1" color="white" sx={{ mt: 4 }}>
+            <Typography
+              variant="body1"
+              color="white"
+              sx={{ mt: 4, textAlign: "center" }}
+            >
               No VAT rates found.
             </Typography>
           )}
@@ -84,7 +115,11 @@ export default function VatRatesPage() {
       </Container>
 
       {/* Snackbar */}
-      <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)}>
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackOpen(false)}
+      >
         <Alert severity="info">{snackMsg}</Alert>
       </Snackbar>
     </Box>

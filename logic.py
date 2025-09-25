@@ -106,7 +106,7 @@ async def vat_report(
     total_sales_excl=df['Total_Excl'].sum()
     total_vat = df['VAT_Amount'].sum()
     total_sales_incl = df['Total_Incl'].sum()
-    total_discounts = df['Discount_Amount'].sum()
+    total_discounts = df['Discount_Amount'].sum() if 'Discount_Amount' in df.columns else 0.0
 
     # VAT breakdown by rate
     vat_breakdown = df.groupby('ItemVATRate').agg({

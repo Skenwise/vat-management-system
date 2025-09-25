@@ -32,7 +32,7 @@ export default function VatReportPage() {
   // Filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [storeId, setStoreId] = useState("");
+  const [StoreId, setStoreId] = useState("");
 
   // Data
   const [transactions, setTransactions] = useState([]);
@@ -68,11 +68,16 @@ export default function VatReportPage() {
 
     setIsLoading(true);
     try {
-      const res = await getVatReport(startDate, endDate, storeId || undefined);
+      const res = await getVatReport({
+        start_date: startDate,
+        end_date: endDate,
+        StoreID: StoreId || undefined,
+      });
       setTransactions(res.data.transactions);
       setSummary(res.data.summary);
     } catch (err) {
       setSnackMsg("Failed to fetch report");
+      console.log("Failed error: "+ err);
       setSnackOpen(true);
     }
     setIsLoading(false);
@@ -110,7 +115,7 @@ export default function VatReportPage() {
                 <TextField
                   select
                   label="Store"
-                  value={storeId}
+                  value={StoreId}
                   onChange={(e) => setStoreId(e.target.value)}
                   SelectProps={{ native: true }}
                   sx={{ flex: 1 }}
