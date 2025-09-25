@@ -1,8 +1,9 @@
 // src/services/api.js
+//
 import axios from "axios";
 
 // Base URL for your FastAPI server
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://your-subdomain.serveo.net/:8000";
 
 // Example: Optional timeout
 const api = axios.create({
