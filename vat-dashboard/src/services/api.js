@@ -3,7 +3,7 @@
 import axios from "axios";
 
 // Base URL for your FastAPI server
-const API_BASE = "https://your-subdomain.serveo.net/";
+const API_BASE = process.env.REACT_APP_API_BASE;
 
 // Example: Optional timeout
 const api = axios.create({
