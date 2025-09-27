@@ -9,8 +9,6 @@ import {
   CardContent,
   TextField,
   Button,
-  Chip,
-  Divider,
   Snackbar,
   Alert,
   Table,
@@ -142,20 +140,8 @@ export default function VatSummaryPage() {
           <Grid container spacing={3} mb={4}>
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ borderRadius: 3, p: 3, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)" }}>
-                <Typography variant="subtitle2" color="text.secondary">Gross Sales</Typography>
-                <Typography variant="h5" fontWeight={700}>${summary.total_gross_sales || 0}</Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ borderRadius: 3, p: 3, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)" }}>
-                <Typography variant="subtitle2" color="text.secondary">Taxable Sales</Typography>
-                <Typography variant="h5" fontWeight={700}>${summary.total_taxable_sales || 0}</Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ borderRadius: 3, p: 3, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)" }}>
-                <Typography variant="subtitle2" color="text.secondary">Non-Taxable Sales</Typography>
-                <Typography variant="h5" fontWeight={700}>${summary.total_non_taxable_sales || 0}</Typography>
+                <Typography variant="subtitle2" color="text.secondary">Total Sales Excl. VAT</Typography>
+                <Typography variant="h5" fontWeight={700}>${summary.total_sales_excl_vat || 0}</Typography>
               </Card>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -166,8 +152,14 @@ export default function VatSummaryPage() {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ borderRadius: 3, p: 3, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)" }}>
-                <Typography variant="subtitle2" color="text.secondary">Total Discounts</Typography>
-                <Typography variant="h5" fontWeight={700}>${summary.total_discounts || 0}</Typography>
+                <Typography variant="subtitle2" color="text.secondary">Total Sales Incl. VAT</Typography>
+                <Typography variant="h5" fontWeight={700}>${summary.total_sales_incl_vat || 0}</Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ borderRadius: 3, p: 3, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)" }}>
+                <Typography variant="subtitle2" color="text.secondary">Transactions</Typography>
+                <Typography variant="h5" fontWeight={700}>{summary.total_transactions || 0}</Typography>
               </Card>
             </Grid>
           </Grid>
@@ -182,11 +174,9 @@ export default function VatSummaryPage() {
                   <TableHead>
                     <TableRow>
                       <TableCell>Date</TableCell>
-                      <TableCell>Gross Sales</TableCell>
-                      <TableCell>Taxable Sales</TableCell>
-                      <TableCell>Non-Taxable Sales</TableCell>
+                      <TableCell>Sales Excl. VAT</TableCell>
                       <TableCell>VAT</TableCell>
-                      <TableCell>Discounts</TableCell>
+                      <TableCell>Sales Incl. VAT</TableCell>
                       <TableCell>Transactions</TableCell>
                     </TableRow>
                   </TableHead>
@@ -195,10 +185,8 @@ export default function VatSummaryPage() {
                       <TableRow key={idx}>
                         <TableCell>{d.TransactionDate}</TableCell>
                         <TableCell>${d.TotalExcl}</TableCell>
-                        <TableCell>${d.TotalTaxable || 0}</TableCell>
-                        <TableCell>${d.TotalNonTaxable || 0}</TableCell>
                         <TableCell>${d.TotalVAT}</TableCell>
-                        <TableCell>${d.TotalDiscounts}</TableCell>
+                        <TableCell>${d.TotalIncl}</TableCell>
                         <TableCell>{d.TransactionCount}</TableCell>
                       </TableRow>
                     ))}

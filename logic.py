@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query, HTTPException, APIRouter
+import numpy as np
 import pandas as pd
 from database import Database
 from fastapi.middleware.cors import CORSMiddleware
@@ -74,7 +75,7 @@ async def vat_report(
 
     params =  [start_date, end_date]
 
-    if StoreID:
+    if StoreID is not None:
         base_query += " AND te.StoreID = ? "
         params.append(str(StoreID))
     
@@ -98,6 +99,8 @@ async def vat_report(
             "vat_breakdown": [],
             "store_breakdown": []
         }
+    
+    df = df.replace({np.nan: None, np.inf: None, -np.inf: None})
     
 
     
@@ -174,39 +177,6 @@ async def vat_summary(
     
     conn = db_instance.get_connection()
 
-    summary_query = """
-        SELECT 
-            Date AS SummaryDate,
-            Total AS GrossSales,
-            StoreID
-        FROM DailySales
-        WHERE Date >= ? AND Date <= ?
-        ORDER BY Date 
-    """
-
-    try:
-        df = pd.read_sql(summary_query, conn, params=[start_date, end_date])
-
-        if not df.empty:
-            return {
-                "period": {
-                    "start_date": start_date,
-                    "end_date": end_date
-                },
-                "summary": {
-                    "total_gross_sales": round(df['GrossSales'].sum(), 2),
-                    "total_taxable_sales": round(df['TaxableSales'].sum(), 2),
-                    "total_non_taxable_sales": round(df['NonTaxableSales'].sum(), 2),
-                    "total_vat_amount": round(df['TaxAmount'].sum(), 2),
-                    "total_discounts": round(df['Discounts'].sum(), 2)
-                },
-                "daily_breakdown": df.to_dict(orient="records")
-            }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
-        
-
-    
     transaction_query = """
             SELECT 
                 CAST(Time as DATE) as TransactionDate,
@@ -218,16 +188,20 @@ async def vat_summary(
             WHERE Time >= ? AND Time <= ?
         """
     
-    params = [start_date, end_date]
-    if StoreID:
+    params = (start_date, end_date)
+    if StoreID is not None:
         transaction_query += " AND StoreID = ?"
-        params.append(str(StoreID))
+        params += (StoreID,)
     
     transaction_query += " GROUP BY CAST(Time as DATE) ORDER BY CAST(Time AS Date)"
     
     try:
         df = pd.read_sql(transaction_query, conn, params=tuple(params))
-        
+        df = df.replace({np.nan: 0})
+
+        print("DEBUG")
+        print(df.head(10))
+        print(df.dtypes)
         return {
             "period": {
                 "start_date": start_date,
@@ -279,7 +253,10 @@ async def get_vat_rates():
             GROUP BY t2.Percentage 
             ORDER BY t2.percentage
         """, conn)
-        return {"vat_rates": df.to_dict(orient="records")}
+
+        result = df.astype(object).where(pd.notnull(df), None).to_dict(orient="records")
+
+        return {"vat_rates": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch VAT rates: {str(e)}")
 

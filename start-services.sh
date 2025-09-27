@@ -1,2 +1,3 @@
 #!/bin/bash
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+# Start FastAPI
+uvicorn main:app --host 0.0.0.0 --port 8000
