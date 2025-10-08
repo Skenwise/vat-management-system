@@ -1,0 +1,11 @@
+version: "3.9"
+
+
+services:
+  vat-app:
+    build: .
+    container_name: vat-program
+    ports:
+      - "8080:80"     # Frontend
+      - "8000:8000"   # Backend
+    restart: always
