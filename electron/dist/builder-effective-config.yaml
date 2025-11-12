@@ -1,0 +1,16 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.choma.vat
+electronVersion: 28.2.0
+npmRebuild: false
+win:
+  target: nsis
+  icon: assets/icon.ico
+files:
+  - filter:
+      - frontend/vat-dashboard/build/**/*
+      - main.js
+      - backend/**/*.py
+      - logic.py
+      - database.py

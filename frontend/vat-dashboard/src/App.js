@@ -1,6 +1,6 @@
 // src/App.jsx
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import HomePage from "./pages/connectio";
 import StoresPage from "./pages/StoresPage";
@@ -10,7 +10,7 @@ import VatReportPage from "./pages/VatReportPages";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -20,6 +20,6 @@ export default function App() {
           <Route path="vat-report" element={<VatReportPage />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
