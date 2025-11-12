@@ -21,3 +21,18 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Python
+__pycache__/
+*.pyc
+
+# Node / Electron
+node_modules/
+dist/
+build/
+
+# Zipped / packaged files
+*.zip
+*.tar
+*.pkg
+
